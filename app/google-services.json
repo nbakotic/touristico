@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "56180918489",
+    "project_id": "touristico-9aab0",
+    "storage_bucket": "touristico-9aab0.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:56180918489:android:f3561309344b4b978616c8",
+        "android_client_info": {
+          "package_name": "com.example.touristico"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "56180918489-skgf4h0l2v5ug3jms6ng2jfra9hg2b65.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDowoGPhXynZMb7UbKdL3LluJ5J3u2ZUd0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "56180918489-skgf4h0l2v5ug3jms6ng2jfra9hg2b65.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
