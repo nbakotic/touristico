@@ -2,8 +2,10 @@ package com.example.touristico.admin.beaches
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -119,24 +121,18 @@ class AdminAddBeachFragment : Fragment() {
 
     private fun uploadPictureToFirebase(imageUri: Uri) = CoroutineScope(Dispatchers.IO).launch {
         try {
-            val ref = storageReference!!.child("images/$idBeach")
-            val uploadTask = ref.putFile(imageUri)
-            uploadTask.continueWith {
-                if (!it.isSuccessful) {
-                    it.exception?.let { t ->
-                        throw t
-                    }
-                }
-                ref.downloadUrl
-            }.addOnCompleteListener {
-                if (it.isSuccessful) {
-                    it.result!!.addOnSuccessListener { task ->
-                        urlPicture = task.toString()
-                        Timber.tag("urlPicture").d(urlPicture)
-                        binding.progressBar.visibility = View.GONE
-                    }
-                }
+            val imageUrl = Tools.getFileName(imageUri, requireContext())
+            val bitmap: Bitmap = MediaStore.Images.Media.getBitmap(requireContext().contentResolver, imageUri)
+
+            val db = DBHelper(requireContext(), null)
+
+            if (imageUrl != null) {
+                db.addImage(imageUrl , bitmap)
+                urlPicture = imageUrl
             }
+
+            Timber.tag("urlPicture").d(urlPicture)
+            binding.progressBar.visibility = View.GONE
         } catch (e: Exception) {
             Timber.tag("uploadPictureError").d(e.toString())
         }
