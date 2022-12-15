@@ -74,6 +74,34 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
     }
 
 
+
+    fun updateBeach(id : Int, name : String, address : String, distance: String, type: String, extra: String) {
+        val values = ContentValues()
+
+        values.put(KEY_NAME, name)
+        values.put(KEY_ADDRESS, address)
+        values.put(KEY_DISTANCE, distance)
+        values.put(KEY_TYPE, type)
+        values.put(KEY_EXTRA, extra)
+
+        val db = this.writableDatabase
+        db.update(BEACH_TABLE,  values, "$KEY_ID=$id", null)
+        db.close()
+
+    }
+
+    fun getItemWithId(table : String, id : Int) : Cursor? {
+        val db = this.readableDatabase
+        return db.rawQuery("SELECT * FROM $table WHERE $KEY_ID=$id", null)
+    }
+
+    fun deleteItemWithId(table : String, id : Int) {
+        val db = this.writableDatabase
+        db.delete(table, "$KEY_ID=$id", null)
+        db.close()
+    }
+
+
     //add image
     fun addImage(url : String, image : Bitmap) {
 
@@ -105,11 +133,18 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
             cursor.close()
             return BitmapFactory.decodeByteArray(imgByte, 0, imgByte.size)
         }
-        if (cursor != null && !cursor.isClosed) {
+        if (!cursor.isClosed) {
             cursor.close()
         }
         return null
     }
+
+    fun deleteImage(url : String) {
+        val db = this.writableDatabase
+        db.delete(IMAGE_TABLE, "$KEY_URL='$url'", null)
+        db.close()
+    }
+
 
     companion object{
         // database variables

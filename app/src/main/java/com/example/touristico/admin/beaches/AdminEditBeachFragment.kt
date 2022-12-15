@@ -1,5 +1,6 @@
 package com.example.touristico.admin.beaches
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.graphics.Color
 import android.os.Bundle
@@ -10,14 +11,10 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.Navigation
 import com.example.touristico.R
-import com.example.touristico.admin.models.Beach
 import com.example.touristico.databinding.FragmentAdminEditBeachBinding
+import com.example.touristico.utils.DBHelper
 import com.example.touristico.utils.InputValidator
-import com.example.touristico.utils.Tools
 import com.google.firebase.database.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class AdminEditBeachFragment : Fragment() {
     private var _binding: FragmentAdminEditBeachBinding? = null
@@ -28,11 +25,9 @@ class AdminEditBeachFragment : Fragment() {
     private var distance: String = ""
     private var type: String = ""
     private var extra: String = ""
-    private var key: String = ""
+    private var url: String = ""
 
-    private lateinit var database: FirebaseDatabase
-    private lateinit var myRef: DatabaseReference
-
+    @SuppressLint("Range")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (arguments != null) {
@@ -46,9 +41,6 @@ class AdminEditBeachFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentAdminEditBeachBinding.inflate(inflater, container, false)
-
-        database = FirebaseDatabase.getInstance(Tools.URL_PATH)
-        myRef = database.reference
 
         return binding.root
     }
@@ -87,18 +79,9 @@ class AdminEditBeachFragment : Fragment() {
     }
 
     private fun deleteBeach() {
-        val query: Query = myRef.child("beach").orderByChild("id").equalTo(beachId)
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        issue.ref.removeValue()
-                    }
-                }
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
+        val db = DBHelper(requireContext(), null)
+        db.deleteImage(url)
+        db.deleteItemWithId(DBHelper.BEACH_TABLE, beachId.toInt())
 
         Toast.makeText(context, "Beach deleted successfully", Toast.LENGTH_LONG).show()
         Navigation.findNavController(requireView())
@@ -112,23 +95,8 @@ class AdminEditBeachFragment : Fragment() {
         type = binding.etEditType.text.toString()
         extra = binding.etEditExtra.text.toString()
 
-        val query: Query = myRef.child("beach").orderByChild("id").equalTo(beachId)
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        key = issue.key.toString()
-                        myRef.child("beach/").child(key).child("name").setValue(beachName)
-                        myRef.child("beach/").child(key).child("address").setValue(address)
-                        myRef.child("beach/").child(key).child("distance").setValue(distance)
-                        myRef.child("beach/").child(key).child("type").setValue(type)
-                        myRef.child("beach/").child(key).child("extra").setValue(extra)
-                    }
-                }
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
+        val db = DBHelper(requireContext(), null)
+        db.updateBeach(beachId.toInt(),beachName,address,distance,type,extra)
 
         Toast.makeText(context, "Beach information updated successfully", Toast.LENGTH_LONG).show()
         Navigation.findNavController(requireView())
@@ -149,32 +117,31 @@ class AdminEditBeachFragment : Fragment() {
 
     }
 
-    private fun setBeachInformation() = CoroutineScope(Dispatchers.IO).launch {
-        val query: Query = myRef.child("beach").orderByChild("id").equalTo(beachId)
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        val value = issue.getValue(Beach::class.java)
-                        beachName = value!!.name.toString()
-                        address = value.address.toString()
-                        distance = value.distance.toString()
-                        type = value.type
-                        extra = value.extra
-                        setDefaultInformation()
-                    }
-                }
-            }
+    @SuppressLint("Range")
+    private fun setBeachInformation() {
+        val db = DBHelper(requireContext(), null)
+        val cursor = db.getItemWithId(DBHelper.BEACH_TABLE, beachId.toInt())
 
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
+        if (cursor!!.moveToFirst()) {
+            do {
+                beachName = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_NAME))
+                address = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_ADDRESS))
+                distance = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_DISTANCE))
+                type = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_TYPE))
+                extra = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_EXTRA))
+                url = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_URL))
+            } while (cursor.moveToNext())
+        }
+
+        setDefaultInformation()
     }
 
-    fun setDefaultInformation() {
+    private fun setDefaultInformation() {
         binding.etEditName.setText(beachName)
         binding.etEditAdd.setText(address)
         binding.etEditDist.setText(distance)
         binding.etEditType.setText(type)
         binding.etEditExtra.setText(extra)
+
     }
 }
