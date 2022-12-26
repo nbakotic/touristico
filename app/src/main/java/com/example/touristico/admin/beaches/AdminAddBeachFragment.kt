@@ -18,27 +18,18 @@ import com.example.touristico.databinding.FragmentAdminAddBeachBinding
 import com.example.touristico.utils.InputValidator
 import com.example.touristico.utils.Tools
 import com.example.touristico.utils.DBHelper
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageReference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.IOException
-import java.util.*
 
 class AdminAddBeachFragment : Fragment() {
 
     private var _binding: FragmentAdminAddBeachBinding? = null
-    private lateinit var databaseDevices: DatabaseReference
-    private var storage: FirebaseStorage? = null
-    private var storageReference: StorageReference? = null
 
     private val binding get() = _binding!!
     private var imageUri: Uri? = null
-    private var idBeach: String = ""
     private var urlPicture: String = ""
 
     override fun onCreateView(
@@ -53,15 +44,10 @@ class AdminAddBeachFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        databaseDevices = FirebaseDatabase.getInstance(Tools.URL_PATH).reference
-        storage = FirebaseStorage.getInstance()
-        storageReference = storage!!.reference
-
         initListeners()
     }
 
     private fun initListeners() {
-        idBeach = UUID.randomUUID().toString()
         binding.ibEditPicture.setOnClickListener {
             resultLauncher.launch(Tools.gallery())
             binding.progressBar.visibility = View.VISIBLE
