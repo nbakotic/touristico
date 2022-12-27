@@ -2,8 +2,10 @@ package com.example.touristico.admin.attractions
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,12 +15,9 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.Navigation
 import com.example.touristico.R
 import com.example.touristico.databinding.FragmentAdminAddAttractionsBinding
+import com.example.touristico.utils.DBHelper
 import com.example.touristico.utils.InputValidator
 import com.example.touristico.utils.Tools
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageReference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -29,9 +28,6 @@ import java.util.*
 class AdminAddAttractionsFragment : Fragment() {
 
     private var _binding: FragmentAdminAddAttractionsBinding? = null
-    private lateinit var databaseDevices: DatabaseReference
-    private var storage: FirebaseStorage? = null
-    private var storageReference: StorageReference? = null
 
     private val binding get() = _binding!!
     private var imageUri: Uri? = null
@@ -50,10 +46,6 @@ class AdminAddAttractionsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        databaseDevices = FirebaseDatabase.getInstance(Tools.URL_PATH).reference
-        storage = FirebaseStorage.getInstance()
-        storageReference = storage!!.reference
-
         initListeners()
     }
 
@@ -66,16 +58,17 @@ class AdminAddAttractionsFragment : Fragment() {
 
         binding.btnAdd.setOnClickListener {
             if (checkInput()) {
-                val hashMap: HashMap<String, Any> = HashMap()
-                hashMap["name"] = binding.etAttName.text.toString()
-                hashMap["address"] = binding.etAttAdd.text.toString()
-                hashMap["distance"] = binding.etAttDist.text.toString()
-                hashMap["hours"] = binding.etAttHours.text.toString()
-                hashMap["desc"] = binding.etAttDesc.text.toString()
-                hashMap["id"] = id
-                hashMap["url"] = urlPicture
+                val db = DBHelper(requireContext(), null)
 
-                databaseDevices.child("attractions/").push().setValue(hashMap)
+                val name = binding.etAttName.text.toString()
+                val address = binding.etAttAdd.text.toString()
+                val distance = binding.etAttDist.text.toString()
+                val hours = binding.etAttHours.text.toString()
+                val desc = binding.etAttDesc.text.toString()
+                val url = urlPicture
+
+                db.addAttraction(name, address, distance, hours, desc, url)
+
                 Toast.makeText(context, "Attraction added successfully", Toast.LENGTH_LONG).show()
                 Navigation.findNavController(requireView())
                     .navigate(R.id.action_adminAddAttractionsFragment_to_adminAttractionsDetailFragment)
@@ -120,24 +113,18 @@ class AdminAddAttractionsFragment : Fragment() {
 
     private fun uploadPictureToFirebase(imageUri: Uri) = CoroutineScope(Dispatchers.IO).launch {
         try {
-            val ref = storageReference!!.child("images/$id")
-            val uploadTask = ref.putFile(imageUri)
-            uploadTask.continueWith {
-                if (!it.isSuccessful) {
-                    it.exception?.let { t ->
-                        throw t
-                    }
-                }
-                ref.downloadUrl
-            }.addOnCompleteListener {
-                if (it.isSuccessful) {
-                    it.result!!.addOnSuccessListener { task ->
-                        urlPicture = task.toString()
-                        Timber.tag("urlPicture").d(urlPicture)
-                        binding.progressBar2.visibility = View.GONE
-                    }
-                }
+            val imageUrl = Tools.getFileName(imageUri, requireContext())
+            val bitmap: Bitmap = MediaStore.Images.Media.getBitmap(requireContext().contentResolver, imageUri)
+
+            val db = DBHelper(requireContext(), null)
+
+            if (imageUrl != null) {
+                db.addImage(imageUrl , bitmap)
+                urlPicture = imageUrl
             }
+
+            Timber.tag("urlPicture").d(urlPicture)
+            binding.progressBar2.visibility = View.GONE
         } catch (e: Exception) {
             Timber.tag("uploadPictureError").d(e.toString())
         }
