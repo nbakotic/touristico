@@ -12,6 +12,7 @@ import com.example.touristico.R
 import com.example.touristico.admin.models.Restaurant
 import com.example.touristico.admin.restaurants.AdminRestaurantsFragmentDirections
 import com.example.touristico.databinding.RestaurantCardBinding
+import com.example.touristico.utils.DBHelper
 
 
 class RestaurantsAdapter(private val list: MutableList<Restaurant>, private val context: Context) :
@@ -25,15 +26,20 @@ class RestaurantsAdapter(private val list: MutableList<Restaurant>, private val 
     }
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
+        val db = DBHelper(context, null)
         val item = list[position]
+        val imageBitmap = db.getImage(item.url!!)
+
         with(holder) {
             binding.name.text = item.name
             binding.distance.text = item.distance
             binding.address.text = item.address
             binding.hours.text = item.hours
             binding.menu.text = item.food
+
             Glide.with(binding.image.context)
-                .load(item.url)
+                .asBitmap()
+                .load(imageBitmap)
                 .placeholder(R.drawable.ic_baseline_device_unknown_24)
                 .into(binding.image)
 

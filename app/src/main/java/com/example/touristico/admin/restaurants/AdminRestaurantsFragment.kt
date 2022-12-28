@@ -1,5 +1,6 @@
 package com.example.touristico.admin.restaurants
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,11 +12,7 @@ import com.example.touristico.R
 import com.example.touristico.adapter.RestaurantsAdapter
 import com.example.touristico.admin.models.Restaurant
 import com.example.touristico.databinding.FragmentAdminRestaurantsBinding
-import com.example.touristico.utils.Tools
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.example.touristico.utils.DBHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -46,29 +43,30 @@ class AdminRestaurantsFragment : Fragment() {
         initListeners()
     }
 
+    @SuppressLint("Range")
     private fun getFirebaseData() = CoroutineScope(Dispatchers.IO).launch {
         restaurantsList.clear()
-        val database = FirebaseDatabase.getInstance(Tools.URL_PATH)
-        val myRef = database.getReference("restaurants")
+        val db = DBHelper(requireContext(), null)
+        val cursor = db.getRestaurant()
 
-        myRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                for (data in dataSnapshot.children) {
-                    val value = data.getValue(Restaurant::class.java)
-                    if (value != null) {
-                        restaurantsList.add(value)
-                    }
-                }
-                if (restaurantsList.isEmpty()) {
-                    //binding.currentList.visibility = View.GONE
-                    binding.noBeaches.visibility = View.VISIBLE
-                }
-                restaurantsAdapter.notifyDataSetChanged()
-            }
+        if (cursor!!.moveToFirst()) {
+            do {
+                val name = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_NAME))
+                val address = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_ADDRESS))
+                val distance = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_DISTANCE))
+                val hours = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_HOURS))
+                val food = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_FOOD))
+                val url = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_URL))
+                val id = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_ID))
 
-            override fun onCancelled(error: DatabaseError) {
-            }
-        })
+                val restaurant = Restaurant(name, address, distance, hours, food, url, id)
+                restaurantsList.add(restaurant)
+            } while (cursor.moveToNext())
+        } else {
+            binding.noBeaches.visibility = View.VISIBLE
+        }
+        cursor.close()
+        db.close()
     }
 
     private fun setAdapter() {

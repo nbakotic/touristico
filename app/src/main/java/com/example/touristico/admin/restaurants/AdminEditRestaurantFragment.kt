@@ -1,5 +1,6 @@
 package com.example.touristico.admin.restaurants
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.graphics.Color
 import android.os.Bundle
@@ -10,14 +11,10 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.Navigation
 import com.example.touristico.R
-import com.example.touristico.admin.models.Restaurant
 import com.example.touristico.databinding.FragmentAdminEditRestaurantBinding
+import com.example.touristico.utils.DBHelper
 import com.example.touristico.utils.InputValidator
-import com.example.touristico.utils.Tools
 import com.google.firebase.database.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class AdminEditRestaurantFragment : Fragment() {
     private var _binding: FragmentAdminEditRestaurantBinding? = null
@@ -28,10 +25,7 @@ class AdminEditRestaurantFragment : Fragment() {
     private var distance: String = ""
     private var hours: String = ""
     private var food: String = ""
-    private var key: String = ""
-
-    private lateinit var database: FirebaseDatabase
-    private lateinit var myRef: DatabaseReference
+    private var url: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,9 +40,6 @@ class AdminEditRestaurantFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentAdminEditRestaurantBinding.inflate(inflater, container, false)
-
-        database = FirebaseDatabase.getInstance(Tools.URL_PATH)
-        myRef = database.reference
 
         return binding.root
     }
@@ -86,18 +77,9 @@ class AdminEditRestaurantFragment : Fragment() {
     }
 
     private fun deleteAtt() {
-        val query: Query = myRef.child("restaurants").orderByChild("id").equalTo(id)
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        issue.ref.removeValue()
-                    }
-                }
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
+        val db = DBHelper(requireContext(), null)
+        db.deleteImage(url)
+        db.deleteItemWithId(DBHelper.RESTAURANT_TABLE, id.toInt())
 
         Toast.makeText(context, "Restaurant deleted successfully", Toast.LENGTH_LONG).show()
         Navigation.findNavController(requireView())
@@ -111,23 +93,8 @@ class AdminEditRestaurantFragment : Fragment() {
         hours = binding.etEditHours.text.toString()
         food = binding.etEditDesc.text.toString()
 
-        val query: Query = myRef.child("restaurants").orderByChild("id").equalTo(id)
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        key = issue.key.toString()
-                        myRef.child("restaurants/").child(key).child("name").setValue(name)
-                        myRef.child("restaurants/").child(key).child("address").setValue(address)
-                        myRef.child("restaurants/").child(key).child("distance").setValue(distance)
-                        myRef.child("restaurants/").child(key).child("hours").setValue(hours)
-                        myRef.child("restaurants/").child(key).child("food").setValue(food)
-                    }
-                }
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
+        val db = DBHelper(requireContext(), null)
+        db.updateRestaurant(id.toInt(), name, address, distance, hours, food)
 
         Toast.makeText(context, "Restaurant information updated successfully", Toast.LENGTH_LONG)
             .show()
@@ -153,28 +120,26 @@ class AdminEditRestaurantFragment : Fragment() {
 
     }
 
-    private fun setAttInformation() = CoroutineScope(Dispatchers.IO).launch {
-        val query: Query = myRef.child("restaurants").orderByChild("id").equalTo(id)
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        val value = issue.getValue(Restaurant::class.java)
-                        name = value!!.name.toString()
-                        address = value.address.toString()
-                        distance = value.distance.toString()
-                        hours = value.hours.toString()
-                        food = value.food.toString()
-                        setDefaultInformation()
-                    }
-                }
-            }
+    @SuppressLint("Range")
+    private fun setAttInformation() {
+        val db = DBHelper(requireContext(), null)
+        val cursor = db.getItemWithId(DBHelper.RESTAURANT_TABLE, id.toInt())
 
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
+        if (cursor!!.moveToFirst()) {
+            do {
+                name = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_NAME))
+                address = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_ADDRESS))
+                distance = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_DISTANCE))
+                hours = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_HOURS))
+                food = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_FOOD))
+                url = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_URL))
+            } while (cursor.moveToNext())
+        }
+
+        setDefaultInformation()
     }
 
-    fun setDefaultInformation() {
+    private fun setDefaultInformation() {
         binding.etEditName.setText(name)
         binding.etEditAdd.setText(address)
         binding.etEditDist.setText(distance)

@@ -1,5 +1,6 @@
 package com.example.touristico.admin.shops
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.graphics.Color
 import android.os.Bundle
@@ -10,10 +11,9 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.Navigation
 import com.example.touristico.R
-import com.example.touristico.admin.models.Beach
 import com.example.touristico.databinding.FragmentAdminEditShopBinding
+import com.example.touristico.utils.DBHelper
 import com.example.touristico.utils.InputValidator
-import com.example.touristico.utils.Tools
 import com.google.firebase.database.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,7 +26,6 @@ class AdminEditShopFragment : Fragment() {
     private var shopName: String = ""
     private var address: String = ""
     private var distance: String = ""
-    private var key: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,21 +76,8 @@ class AdminEditShopFragment : Fragment() {
     }
 
     private fun deleteShop() {
-        val database = FirebaseDatabase.getInstance(Tools.URL_PATH)
-        val myRef = database.reference
-
-        val query: Query = myRef.child("shops").orderByChild("id").equalTo(shopId)
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        issue.ref.removeValue()
-                    }
-                }
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
+        val db = DBHelper(requireContext(), null)
+        db.deleteItemWithId(DBHelper.SHOP_TABLE, shopId.toInt())
 
         Toast.makeText(context, "Shop deleted successfully", Toast.LENGTH_LONG).show()
         Navigation.findNavController(requireView())
@@ -99,28 +85,12 @@ class AdminEditShopFragment : Fragment() {
     }
 
     private fun updateShop() {
-        val database = FirebaseDatabase.getInstance(Tools.URL_PATH)
-        val myRef = database.reference
-
         shopName = binding.etEditName.text.toString()
         address = binding.etEditAdd.text.toString()
         distance = binding.etEditDist.text.toString()
 
-        val query: Query = myRef.child("shops").orderByChild("id").equalTo(shopId)
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        key = issue.key.toString()
-                        myRef.child("shops/").child(key).child("name").setValue(shopName)
-                        myRef.child("shops/").child(key).child("address").setValue(address)
-                        myRef.child("shops/").child(key).child("distance").setValue(distance)
-                    }
-                }
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
+        val db = DBHelper(requireContext(), null)
+        db.updateShop(shopId.toInt(), shopName, address, distance)
 
         Toast.makeText(context, "Shop information updated successfully", Toast.LENGTH_LONG).show()
         Navigation.findNavController(requireView())
@@ -141,26 +111,20 @@ class AdminEditShopFragment : Fragment() {
 
     }
 
-    private fun setShopInformation() = CoroutineScope(Dispatchers.IO).launch {
-        val database = FirebaseDatabase.getInstance(Tools.URL_PATH)
-        val myRef = database.reference
+    @SuppressLint("Range")
+    private fun setShopInformation() {
+        val db = DBHelper(requireContext(), null)
+        val cursor = db.getItemWithId(DBHelper.SHOP_TABLE, shopId.toInt())
 
-        val query: Query = myRef.child("shops").orderByChild("id").equalTo(shopId)
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        val value = issue.getValue(Beach::class.java)
-                        shopName = value!!.name.toString()
-                        address = value.address.toString()
-                        distance = value.distance.toString()
-                        setDefaultInformation()
-                    }
-                }
-            }
+        if (cursor!!.moveToFirst()) {
+            do {
+                shopName = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_NAME))
+                address = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_ADDRESS))
+                distance = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_DISTANCE))
+            } while (cursor.moveToNext())
+        }
 
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
+        setDefaultInformation()
     }
 
     fun setDefaultInformation() {
