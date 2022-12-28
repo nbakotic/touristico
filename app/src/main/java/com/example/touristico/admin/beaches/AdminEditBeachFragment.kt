@@ -27,7 +27,6 @@ class AdminEditBeachFragment : Fragment() {
     private var extra: String = ""
     private var url: String = ""
 
-    @SuppressLint("Range")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (arguments != null) {

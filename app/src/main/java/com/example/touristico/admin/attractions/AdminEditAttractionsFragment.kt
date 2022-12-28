@@ -1,5 +1,6 @@
 package com.example.touristico.admin.attractions
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.graphics.Color
 import android.os.Bundle
@@ -12,6 +13,7 @@ import androidx.navigation.Navigation
 import com.example.touristico.R
 import com.example.touristico.admin.models.Attraction
 import com.example.touristico.databinding.FragmentAdminEditAttractionsBinding
+import com.example.touristico.utils.DBHelper
 import com.example.touristico.utils.InputValidator
 import com.example.touristico.utils.Tools
 import com.google.firebase.database.*
@@ -29,6 +31,7 @@ class AdminEditAttractionsFragment : Fragment() {
     private var hours: String = ""
     private var desc: String = ""
     private var key: String = ""
+    private var url: String = ""
 
     private lateinit var database: FirebaseDatabase
     private lateinit var myRef: DatabaseReference
@@ -40,7 +43,6 @@ class AdminEditAttractionsFragment : Fragment() {
         }
     }
 
-    /** FIREBASE **/
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -88,18 +90,9 @@ class AdminEditAttractionsFragment : Fragment() {
     }
 
     private fun deleteAtt() {
-        val query: Query = myRef.child("attractions").orderByChild("id").equalTo(id)
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        issue.ref.removeValue()
-                    }
-                }
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
+        val db = DBHelper(requireContext(), null)
+        db.deleteImage(url)
+        db.deleteItemWithId(DBHelper.ATTRACTION_TABLE, id.toInt())
 
         Toast.makeText(context, "Attraction deleted successfully", Toast.LENGTH_LONG).show()
         Navigation.findNavController(requireView())
@@ -113,23 +106,8 @@ class AdminEditAttractionsFragment : Fragment() {
         hours = binding.etEditHours.text.toString()
         desc = binding.etEditDesc.text.toString()
 
-        val query: Query = myRef.child("attractions").orderByChild("id").equalTo(id)
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        key = issue.key.toString()
-                        myRef.child("attractions/").child(key).child("name").setValue(name)
-                        myRef.child("attractions/").child(key).child("address").setValue(address)
-                        myRef.child("attractions/").child(key).child("distance").setValue(distance)
-                        myRef.child("attractions/").child(key).child("hours").setValue(hours)
-                        myRef.child("attractions/").child(key).child("desc").setValue(desc)
-                    }
-                }
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
+        val db = DBHelper(requireContext(), null)
+        db.updateAttraction(id.toInt(), name, address, distance, hours, desc)
 
         Toast.makeText(context, "Attraction information updated successfully", Toast.LENGTH_LONG)
             .show()
@@ -155,25 +133,23 @@ class AdminEditAttractionsFragment : Fragment() {
 
     }
 
-    private fun setAttInformation() = CoroutineScope(Dispatchers.IO).launch {
-        val query: Query = myRef.child("attractions").orderByChild("id").equalTo(id)
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        val value = issue.getValue(Attraction::class.java)
-                        name = value!!.name.toString()
-                        address = value.address.toString()
-                        distance = value.distance.toString()
-                        hours = value.hours.toString()
-                        desc = value.desc.toString()
-                        setDefaultInformation()
-                    }
-                }
-            }
+    @SuppressLint("Range")
+    private fun setAttInformation()  {
+        val db = DBHelper(requireContext(), null)
+        val cursor = db.getItemWithId(DBHelper.ATTRACTION_TABLE, id.toInt())
 
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
+        if (cursor!!.moveToFirst()) {
+            do {
+                name = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_NAME))
+                address = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_ADDRESS))
+                distance = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_DISTANCE))
+                hours = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_HOURS))
+                desc = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_DESC))
+                url = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_URL))
+            } while (cursor.moveToNext())
+        }
+
+        setDefaultInformation()
     }
 
     fun setDefaultInformation() {
