@@ -1,6 +1,5 @@
 package com.example.touristico.admin.shops
 
-import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -10,20 +9,13 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.Navigation
 import com.example.touristico.R
 import com.example.touristico.databinding.FragmentAdminAddShopBinding
+import com.example.touristico.utils.DBHelper
 import com.example.touristico.utils.InputValidator
-import com.example.touristico.utils.Tools
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageReference
 import java.util.*
 
 class AdminAddShopFragment : Fragment() {
 
     private var _binding: FragmentAdminAddShopBinding? = null
-    private lateinit var databaseDevices: DatabaseReference
-    private var storage: FirebaseStorage? = null
-    private var storageReference: StorageReference? = null
 
     private val binding get() = _binding!!
     private var idShop: String = ""
@@ -40,10 +32,6 @@ class AdminAddShopFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        databaseDevices = FirebaseDatabase.getInstance(Tools.URL_PATH).reference
-        storage = FirebaseStorage.getInstance()
-        storageReference = storage!!.reference
-
         initListeners()
     }
 
@@ -52,13 +40,14 @@ class AdminAddShopFragment : Fragment() {
 
         binding.btnAddShopToFirebase.setOnClickListener {
             if (checkInput()) {
-                val hashMap: HashMap<String, Any> = HashMap()
-                hashMap["name"] = binding.etShopName.text.toString()
-                hashMap["address"] = binding.etShopAdd.text.toString()
-                hashMap["distance"] = binding.etShopDist.text.toString()
-                hashMap["id"] = idShop
+                val db = DBHelper(requireContext(), null)
 
-                databaseDevices.child("shops/").push().setValue(hashMap)
+                val name = binding.etShopName.text.toString()
+                val address = binding.etShopAdd.text.toString()
+                val distance = binding.etShopDist.text.toString()
+
+                db.addShop(name, address, distance)
+
                 Toast.makeText(context, "Shop added successfully", Toast.LENGTH_LONG).show()
                 Navigation.findNavController(requireView())
                     .navigate(R.id.action_adminAddShopFragment_to_adminShopsFragment)

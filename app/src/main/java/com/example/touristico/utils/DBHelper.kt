@@ -97,13 +97,10 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
         onCreate(db)
     }
 
-    // add beach
-    fun addBeach(name : String, address : String, distance: String, type: String, extra: String, url: String ){
 
-        // content values variable
+    fun addBeach(name : String, address : String, distance: String, type: String, extra: String, url: String ){
         val values = ContentValues()
 
-        // insert values
         values.put(KEY_NAME, name)
         values.put(KEY_ADDRESS, address)
         values.put(KEY_DISTANCE, distance)
@@ -111,23 +108,16 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
         values.put(KEY_EXTRA, extra)
         values.put(KEY_URL, url)
 
-        // insert value in database
         val db = this.writableDatabase
 
-        // all values are inserted into database
         db.insert(BEACH_TABLE, null, values)
 
-        // closing database
         db.close()
     }
 
-    // get beach
     fun getBeach(): Cursor? {
-
-        // readable db, no need to close
         val db = this.readableDatabase
 
-        // query db
         return db.rawQuery("SELECT * FROM $BEACH_TABLE", null)
     }
 
@@ -144,6 +134,7 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
         db.update(BEACH_TABLE,  values, "$KEY_ID=$id", null)
         db.close()
     }
+
 
     fun addAttraction(name : String, address : String, distance: String, hours: String, desc: String, url: String ){
         val values = ContentValues()
@@ -179,6 +170,77 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
 
         val db = this.writableDatabase
         db.update(ATTRACTION_TABLE,  values, "$KEY_ID=$id", null)
+        db.close()
+    }
+
+
+    fun addShop(name : String, address : String, distance: String){
+        val values = ContentValues()
+
+        values.put(KEY_NAME, name)
+        values.put(KEY_ADDRESS, address)
+        values.put(KEY_DISTANCE, distance)
+
+        val db = this.writableDatabase
+
+        db.insert(SHOP_TABLE, null, values)
+
+        db.close()
+    }
+
+    fun getShop(): Cursor? {
+        val db = this.readableDatabase
+
+        return db.rawQuery("SELECT * FROM $SHOP_TABLE", null)
+    }
+
+    fun updateShop(id : Int, name : String, address : String, distance: String) {
+        val values = ContentValues()
+
+        values.put(KEY_NAME, name)
+        values.put(KEY_ADDRESS, address)
+        values.put(KEY_DISTANCE, distance)
+
+        val db = this.writableDatabase
+        db.update(SHOP_TABLE,  values, "$KEY_ID=$id", null)
+        db.close()
+    }
+
+
+    fun addRestaurant(name : String, address : String, distance: String, hours: String, food: String, url: String ){
+        val values = ContentValues()
+
+        values.put(KEY_NAME, name)
+        values.put(KEY_ADDRESS, address)
+        values.put(KEY_DISTANCE, distance)
+        values.put(KEY_HOURS, hours)
+        values.put(KEY_FOOD, food)
+        values.put(KEY_URL, url)
+
+        val db = this.writableDatabase
+
+        db.insert(RESTAURANT_TABLE, null, values)
+
+        db.close()
+    }
+
+    fun getRestaurant(): Cursor? {
+        val db = this.readableDatabase
+
+        return db.rawQuery("SELECT * FROM $RESTAURANT_TABLE", null)
+    }
+
+    fun updateRestaurant(id : Int, name : String, address : String, distance: String, hours: String, food: String) {
+        val values = ContentValues()
+
+        values.put(KEY_NAME, name)
+        values.put(KEY_ADDRESS, address)
+        values.put(KEY_DISTANCE, distance)
+        values.put(KEY_HOURS, hours)
+        values.put(KEY_DESC, food)
+
+        val db = this.writableDatabase
+        db.update(RESTAURANT_TABLE,  values, "$KEY_ID=$id", null)
         db.close()
     }
 
