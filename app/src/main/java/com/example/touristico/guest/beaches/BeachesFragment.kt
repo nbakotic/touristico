@@ -1,21 +1,16 @@
 package com.example.touristico.guest.beaches
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.touristico.adapter.BeachesAdapter
 import com.example.touristico.admin.models.Beach
 import com.example.touristico.databinding.FragmentBeachesBinding
 import com.example.touristico.guest.adapters.GuestBeachAdapter
-import com.example.touristico.utils.Tools
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.example.touristico.utils.DBHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -29,7 +24,7 @@ class BeachesFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
 
         _binding = FragmentBeachesBinding.inflate(inflater, container, false)
         return binding.root
@@ -47,29 +42,27 @@ class BeachesFragment : Fragment() {
         getFirebaseData()
     }
 
+    @SuppressLint("Range")
     private fun getFirebaseData() = CoroutineScope(Dispatchers.IO).launch{
         beachList.clear()
-        val database = FirebaseDatabase.getInstance(Tools.URL_PATH)
-        val myRef = database.getReference("beach")
 
+        val db = DBHelper(requireContext(), null)
+        val cursor = db.getBeach()
 
-        myRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                for (data in dataSnapshot.children){
-                    val value = data.getValue(Beach::class.java)
-                    if (value != null) {
-                        beachList.add(value)
-                    }
-                }
-                if (beachList.isEmpty()){
-                    //binding.currentList.visibility = View.GONE
-                    //binding.noBeaches.visibility = View.VISIBLE
-                }
-                beachesAdapter.notifyDataSetChanged()
-            }
-            override fun onCancelled(error: DatabaseError) {
-            }
-        })
+        if (cursor!!.moveToFirst()) {
+            do {
+                val name = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_NAME))
+                val address = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_ADDRESS))
+                val distance = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_DISTANCE))
+                val type = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_TYPE))
+                val extra = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_EXTRA))
+                val url = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_URL))
+                val id = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_ID))
+
+                val beach = Beach(name, address, distance, type, extra, url, id)
+                beachList.add(beach)
+            } while (cursor.moveToNext())
+        }
     }
 
     private fun setAdapter(){

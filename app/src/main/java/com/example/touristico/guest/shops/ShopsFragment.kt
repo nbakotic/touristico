@@ -1,5 +1,6 @@
 package com.example.touristico.guest.shops
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,11 +10,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.example.touristico.admin.models.Shop
 import com.example.touristico.databinding.FragmentShopsBinding
 import com.example.touristico.guest.adapters.GuestShopsAdapter
-import com.example.touristico.utils.Tools
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.example.touristico.utils.DBHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -43,29 +40,23 @@ class ShopsFragment : Fragment() {
         getFirebaseData()
     }
 
+    @SuppressLint("Range")
     private fun getFirebaseData() = CoroutineScope(Dispatchers.IO).launch {
         shopList.clear()
-        val database = FirebaseDatabase.getInstance(Tools.URL_PATH)
-        val myRef = database.getReference("shops")
+        val db = DBHelper(requireContext(), null)
+        val cursor = db.getShop()
 
-        myRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                for (data in dataSnapshot.children) {
-                    val value = data.getValue(Shop::class.java)
-                    if (value != null) {
-                        shopList.add(value)
-                    }
-                }
-                if (shopList.isEmpty()) {
-                    //binding.currentList.visibility = View.GONE
-                    //binding.noBeaches.visibility = View.VISIBLE
-                }
-                shopsAdapter.notifyDataSetChanged()
-            }
+        if (cursor!!.moveToFirst()) {
+            do {
+                val name = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_NAME))
+                val address = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_ADDRESS))
+                val distance = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_DISTANCE))
+                val id = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_ID))
 
-            override fun onCancelled(error: DatabaseError) {
-            }
-        })
+                val shop = Shop(name, address, distance, id)
+                shopList.add(shop)
+            } while (cursor.moveToNext())
+        }
     }
 
     private fun setAdapter() {
