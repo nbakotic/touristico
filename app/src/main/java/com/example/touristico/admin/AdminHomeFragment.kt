@@ -1,5 +1,6 @@
 package com.example.touristico.admin
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -10,6 +11,7 @@ import androidx.fragment.app.Fragment
 import com.example.touristico.StartActivity
 import com.example.touristico.admin.models.Info
 import com.example.touristico.databinding.FragmentAdminHomeBinding
+import com.example.touristico.utils.DBHelper
 import com.example.touristico.utils.InputValidator
 import com.example.touristico.utils.Tools
 import com.google.firebase.database.*
@@ -27,7 +29,6 @@ class AdminHomeFragment : Fragment() {
     private lateinit var appAdd: String
     private lateinit var wifiName: String
     private lateinit var wifiPass: String
-    private lateinit var key: String
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -62,105 +63,43 @@ class AdminHomeFragment : Fragment() {
     }
 
     private fun checkInfo() {
-        val database = FirebaseDatabase.getInstance(Tools.URL_PATH)
-        val myRef = database.reference
+        val db = DBHelper(requireContext(), null)
+        val cursor = db.getItemWithId(DBHelper.INFO_TABLE, 1)
 
-        myRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (!snapshot.hasChild("info")) {
-                    val hashMap: HashMap<String, Any> = HashMap()
-                    hashMap["guestName"] = ""
-                    hashMap["guestCountry"] = ""
-                    hashMap["appName"] = ""
-                    hashMap["appAdd"] = ""
-                    hashMap["wifiName"] = ""
-                    hashMap["wifiPass"] = ""
-
-                    myRef.child("info").push().setValue(hashMap)
-                } else {
-                    setInformation()
-                }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-
-            }
-        })
-
+        if (cursor!!.moveToFirst()) {
+            setInformation()
+        } else {
+            db.initInfo()
+        }
     }
 
     private fun updateWifi() {
-        val database = FirebaseDatabase.getInstance(Tools.URL_PATH)
-        val myRef = database.reference
-
         wifiName = binding.etWName.text.toString()
         wifiPass = binding.etWPass.text.toString()
 
-        val query: Query = myRef.child("info")
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        key = issue.key.toString()
-                        myRef.child("info/").child(key).child("wifiName").setValue(wifiName)
-                        myRef.child("info/").child(key).child("wifiPass").setValue(wifiPass)
-                    }
-                }
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
+        val db = DBHelper(requireContext(), null)
+        db.updateInfo(DBHelper.KEY_WIFINAME, wifiName, DBHelper.KEY_WIFIPASSWORD, wifiPass)
 
         Toast.makeText(context, "Wifi information updated successfully", Toast.LENGTH_LONG).show()
     }
 
     private fun updateApp() {
-        val database = FirebaseDatabase.getInstance(Tools.URL_PATH)
-        val myRef = database.reference
-
         appName = binding.etEditAname.text.toString()
         appAdd = binding.etAAdd.text.toString()
 
-        val query: Query = myRef.child("info")
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        key = issue.key.toString()
-                        myRef.child("info/").child(key).child("appName").setValue(appName)
-                        myRef.child("info/").child(key).child("appAdd").setValue(appAdd)
-                    }
-                }
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
+        val db = DBHelper(requireContext(), null)
+        db.updateInfo(DBHelper.KEY_APPARTMENTNAME, appName, DBHelper.KEY_APPARTMENTADDRESS, appAdd)
 
         Toast.makeText(context, "Apartment information updated successfully", Toast.LENGTH_LONG)
             .show()
     }
 
     private fun updateGuest() {
-        val database = FirebaseDatabase.getInstance(Tools.URL_PATH)
-        val myRef = database.reference
-
         guestName = binding.etEditGname.text.toString()
         guestCountry = binding.etEditCountry.text.toString()
 
-        val query: Query = myRef.child("info")
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        key = issue.key.toString()
-                        myRef.child("info/").child(key).child("guestName").setValue(guestName)
-                        myRef.child("info/").child(key).child("guestCountry").setValue(guestCountry)
-                    }
-                }
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
+        val db = DBHelper(requireContext(), null)
+        db.updateInfo(DBHelper.KEY_GUESTNAME, guestName, DBHelper.KEY_GUESTCOUNTRY, guestCountry)
 
         Toast.makeText(context, "Guest information updated successfully", Toast.LENGTH_LONG).show()
     }
@@ -196,29 +135,23 @@ class AdminHomeFragment : Fragment() {
         ) && inputValidator.isInputEditTextFilled(binding.etEditCountry, binding.tilEditCountry)
     }
 
-    private fun setInformation() = CoroutineScope(Dispatchers.IO).launch {
-        val database = FirebaseDatabase.getInstance(Tools.URL_PATH)
-        val myRef = database.reference
+    @SuppressLint("Range")
+    private fun setInformation() {
+        val db = DBHelper(requireContext(), null)
+        val cursor = db.getItemWithId(DBHelper.INFO_TABLE, 1)
 
-        val query: Query = myRef.child("info")
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        val value = issue.getValue(Info::class.java)
-                        guestName = value!!.guestName.toString()
-                        guestCountry = value.guestCountry.toString()
-                        appName = value.appName.toString()
-                        appAdd = value.appAdd.toString()
-                        wifiName = value.wifiName
-                        wifiPass = value.wifiPass
-                        setDefaultInformation()
-                    }
-                }
-            }
+        if (cursor!!.moveToFirst()) {
+            do {
+                guestName = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_GUESTNAME))
+                guestCountry = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_GUESTCOUNTRY))
+                appName = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_APPARTMENTNAME))
+                appAdd = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_APPARTMENTADDRESS))
+                wifiName = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_WIFINAME))
+                wifiPass = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_WIFIPASSWORD))
+            } while (cursor.moveToNext())
+        }
 
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
+        setDefaultInformation()
     }
 
     fun setDefaultInformation() {

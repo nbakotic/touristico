@@ -1,5 +1,6 @@
 package com.example.touristico.admin.devices
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -7,16 +8,11 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.navigation.Navigation
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.touristico.R
 import com.example.touristico.adapter.DeviceAdapter
 import com.example.touristico.admin.models.Device
 import com.example.touristico.databinding.FragmentAdminDevicesBinding
-import com.example.touristico.utils.Tools
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.example.touristico.utils.DBHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -44,33 +40,30 @@ class AdminDevicesFragment : Fragment() {
         initListeners()
     }
 
+    @SuppressLint("Range")
     private fun getFirebaseData() = CoroutineScope(Dispatchers.IO).launch {
         deviceList.clear()
-        val database = FirebaseDatabase.getInstance(Tools.URL_PATH)
-        val myRef = database.getReference("device")
+        val db = DBHelper(requireContext(), null)
+        val cursor = db.getDevice()
 
-        myRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                for (data in dataSnapshot.children) {
-                    val value = data.getValue(Device::class.java)
-                    if (value != null) {
-                        deviceList.add(value)
-                    }
-                }
-                if (deviceList.isEmpty()) {
-                    binding.tvCurrentList.visibility = View.GONE
-                    binding.tvNoDevices.visibility = View.VISIBLE
-                }
-                deviceAdapter.notifyDataSetChanged()
-            }
+        if (cursor!!.moveToFirst()) {
+            do {
+                val name = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_NAME))
+                val desc = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_DESC))
+                val url = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_URL))
+                val id = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_ID))
 
-            override fun onCancelled(error: DatabaseError) {
-            }
-        })
+                val device = Device(name, desc, url, id)
+                deviceList.add(device)
+            } while (cursor.moveToNext())
+        } else {
+            binding.tvCurrentList.visibility = View.GONE
+            binding.tvNoDevices.visibility = View.VISIBLE
+        }
     }
 
     private fun setAdapter() {
-        deviceAdapter = DeviceAdapter(deviceList)
+        deviceAdapter = DeviceAdapter(deviceList, requireContext())
         binding.rvAdmin.layoutManager = GridLayoutManager(requireContext(), 2)
         binding.rvAdmin.adapter = deviceAdapter
         deviceAdapter.notifyDataSetChanged()

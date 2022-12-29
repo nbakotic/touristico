@@ -1,5 +1,6 @@
 package com.example.touristico.adapter
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.navigation.findNavController
@@ -9,10 +10,10 @@ import com.example.touristico.R
 import com.example.touristico.admin.devices.AdminDevicesFragmentDirections
 import com.example.touristico.admin.models.Device
 import com.example.touristico.databinding.DeviceCardBinding
+import com.example.touristico.utils.DBHelper
 
-class DeviceAdapter(private val list: MutableList<Device>) :
+class DeviceAdapter(private val list: MutableList<Device>, val context: Context) :
     RecyclerView.Adapter<DeviceAdapter.MyViewHolder>() {
-
     inner class MyViewHolder(val binding: DeviceCardBinding) :
         RecyclerView.ViewHolder(binding.root)
 
@@ -22,11 +23,16 @@ class DeviceAdapter(private val list: MutableList<Device>) :
     }
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
+        val db = DBHelper(context, null)
         val item = list[position]
+        val imageBitmap = db.getImage(item.url!!)
+
         with(holder) {
             binding.tvDevName.text = item.name
+
             Glide.with(binding.ivDevice.context)
-                .load(item.url)
+                .asBitmap()
+                .load(imageBitmap)
                 .placeholder(R.drawable.ic_baseline_device_unknown_24)
                 .into(binding.ivDevice)
 

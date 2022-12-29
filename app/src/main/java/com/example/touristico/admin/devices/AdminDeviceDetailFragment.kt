@@ -1,5 +1,6 @@
 package com.example.touristico.admin.devices
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.graphics.Color
 import android.os.Bundle
@@ -10,15 +11,10 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.Navigation
 import com.example.touristico.R
-import com.example.touristico.admin.models.Device
 import com.example.touristico.databinding.FragmentAdminDeviceDetailBinding
+import com.example.touristico.utils.DBHelper
 import com.example.touristico.utils.InputValidator
-import com.example.touristico.utils.Tools
 import com.google.firebase.database.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-
 
 class AdminDeviceDetailFragment : Fragment() {
     private var _binding: FragmentAdminDeviceDetailBinding? = null
@@ -26,10 +22,7 @@ class AdminDeviceDetailFragment : Fragment() {
     private lateinit var deviceId: String
     private var deviceName: String = ""
     private var description: String = ""
-    private var key: String = ""
-
-    private lateinit var database: FirebaseDatabase
-    private lateinit var myRef: DatabaseReference
+    private var url: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,9 +37,6 @@ class AdminDeviceDetailFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentAdminDeviceDetailBinding.inflate(inflater, container, false)
-
-        database = FirebaseDatabase.getInstance(Tools.URL_PATH)
-        myRef = database.reference
 
         return binding.root
     }
@@ -85,18 +75,9 @@ class AdminDeviceDetailFragment : Fragment() {
     }
 
     private fun deleteDevice() {
-        val query: Query = myRef.child("device").orderByChild("id").equalTo(deviceId)
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        issue.ref.removeValue()
-                    }
-                }
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
+        val db = DBHelper(requireContext(), null)
+        db.deleteImage(url)
+        db.deleteItemWithId(DBHelper.DEVICE_TABLE, deviceId.toInt())
 
         Toast.makeText(context, "Device deleted successfully", Toast.LENGTH_LONG).show()
         Navigation.findNavController(requireView())
@@ -104,23 +85,11 @@ class AdminDeviceDetailFragment : Fragment() {
     }
 
     private fun updateDevice() {
-        val query: Query = myRef.child("device").orderByChild("id").equalTo(deviceId)
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        key = issue.key.toString()
-                        myRef.child("device/").child(key).child("name").setValue(deviceName)
-                        myRef.child("device/").child(key).child("desc").setValue(description)
-                    }
-                }
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
-
         description = binding.etEditDescription.text.toString()
         deviceName = binding.etEditName.text.toString()
+
+        val db = DBHelper(requireContext(), null)
+        db.updateDevice(deviceId.toInt(), deviceName, description)
 
         Toast.makeText(context, "Device updated successfully", Toast.LENGTH_LONG).show()
         Navigation.findNavController(requireView())
@@ -142,25 +111,23 @@ class AdminDeviceDetailFragment : Fragment() {
 
     }
 
-    private fun setDeviceInformation() = CoroutineScope(Dispatchers.IO).launch {
-        val query: Query = myRef.child("device").orderByChild("id").equalTo(deviceId)
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        val value = issue.getValue(Device::class.java)
-                        description = value!!.desc.toString()
-                        deviceName = value.name.toString()
-                        setDefaultInformation()
-                    }
-                }
-            }
+    @SuppressLint("Range")
+    private fun setDeviceInformation() {
+        val db = DBHelper(requireContext(), null)
+        val cursor = db.getItemWithId(DBHelper.DEVICE_TABLE, deviceId.toInt())
 
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
+        if (cursor!!.moveToFirst()) {
+            do {
+                description = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_DESC))
+                deviceName = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_NAME))
+                url = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_URL))
+            } while (cursor.moveToNext())
+        }
+
+        setDefaultInformation()
     }
 
-    fun setDefaultInformation() {
+    private fun setDefaultInformation() {
         binding.etEditDescription.setText(description)
         binding.etEditName.setText(deviceName)
     }
