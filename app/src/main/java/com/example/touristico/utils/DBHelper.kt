@@ -245,6 +245,81 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
     }
 
 
+    fun addDevice(name : String, desc: String, url: String ){
+        val values = ContentValues()
+
+        values.put(KEY_NAME, name)
+        values.put(KEY_DESC, desc)
+        values.put(KEY_URL, url)
+
+
+        val db = this.writableDatabase
+
+        db.insert(DEVICE_TABLE, null, values)
+
+        db.close()
+    }
+
+    fun getDevice(): Cursor? {
+        val db = this.readableDatabase
+
+        return db.rawQuery("SELECT * FROM $DEVICE_TABLE", null)
+    }
+
+    fun updateDevice(id : Int, name : String, desc: String) {
+        val values = ContentValues()
+
+        values.put(KEY_NAME, name)
+        values.put(KEY_DESC, desc)
+
+        val db = this.writableDatabase
+        db.update(DEVICE_TABLE,  values, "$KEY_ID=$id", null)
+        db.close()
+    }
+
+
+    fun getGuestbook(): Cursor? {
+        val db = this.readableDatabase
+
+        return db.rawQuery("SELECT * FROM $GUESTBOOK_TABLE", null)
+    }
+
+
+    fun initInfo() {
+        val values = ContentValues()
+
+        values.put(KEY_GUESTNAME, "")
+        values.put(KEY_GUESTCOUNTRY, "")
+        values.put(KEY_APPARTMENTNAME, "")
+        values.put(KEY_APPARTMENTADDRESS, "")
+        values.put(KEY_WIFINAME, "")
+        values.put(KEY_WIFIPASSWORD, "")
+
+        val db = this.writableDatabase
+
+        db.insert(INFO_TABLE, null, values)
+
+        db.close()
+    }
+
+    fun getInfo(): Cursor? {
+        val db = this.readableDatabase
+
+        return db.rawQuery("SELECT * FROM $INFO_TABLE", null)
+    }
+
+    fun updateInfo(key1 : String, value1: String, key2: String, value2: String) {
+        val values = ContentValues()
+
+        values.put(key1, value1)
+        values.put(key2, value2)
+
+        val db = this.writableDatabase
+        db.update(INFO_TABLE,  values, "$KEY_ID=1", null)
+        db.close()
+    }
+
+
     fun getItemWithId(table : String, id : Int) : Cursor? {
         val db = this.readableDatabase
         return db.rawQuery("SELECT * FROM $table WHERE $KEY_ID=$id", null)

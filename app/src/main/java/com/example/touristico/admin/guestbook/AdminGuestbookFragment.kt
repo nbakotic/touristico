@@ -1,5 +1,6 @@
 package com.example.touristico.admin.guestbook
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,11 +10,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.touristico.databinding.FragmentAdminGuestbookBinding
 import com.example.touristico.guest.adapters.GuestBookAdapter
 import com.example.touristico.guest.models.GuestBook
-import com.example.touristico.utils.Tools
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.example.touristico.utils.DBHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -41,23 +38,25 @@ class AdminGuestbookFragment : Fragment() {
         getFirebaseData()
     }
 
+    @SuppressLint("Range")
     private fun getFirebaseData() = CoroutineScope(Dispatchers.IO).launch {
-        val database = FirebaseDatabase.getInstance(Tools.URL_PATH)
-        val myRef = database.getReference("guestbook")
+        val db = DBHelper(requireContext(), null)
+        val cursor = db.getGuestbook()
 
-        myRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                for (data in dataSnapshot.children) {
-                    val value = data.getValue(GuestBook::class.java)
-                    if (value != null) {
-                        guestReviews.add(value)
-                    }
-                }
-                guestBookAdapter.notifyDataSetChanged()
-            }
-            override fun onCancelled(error: DatabaseError) {
-            }
-        })
+        if (cursor!!.moveToFirst()) {
+            do {
+                val negative = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_NEGATIVE))
+                val positive = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_POSITIVE))
+                val guestName = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_GUESTNAME))
+                val guestCountry =
+                    cursor.getString(cursor.getColumnIndex(DBHelper.KEY_GUESTCOUNTRY))
+                val stars = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_STARS)).toFloat()
+                val time = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_TIME))
+
+                val review = GuestBook(negative, positive, guestName, guestCountry, stars, time)
+                guestReviews.add(review)
+            } while (cursor.moveToNext())
+        }
     }
 
     private fun setAdapter() {
