@@ -1,22 +1,20 @@
 package com.example.touristico.guest.guestbook
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import com.example.touristico.admin.models.Info
 import com.example.touristico.databinding.FragmentGuestbookBinding
+import com.example.touristico.utils.DBHelper
 import com.example.touristico.utils.Tools
 import com.google.firebase.database.*
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import timber.log.Timber
-import java.sql.Timestamp
 import java.text.SimpleDateFormat
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.*
 
 class GuestbookFragment : Fragment() {
@@ -56,6 +54,7 @@ class GuestbookFragment : Fragment() {
         }
     }
 
+    @SuppressLint("Range")
     private fun checkInput(){
         var positiveText = binding.etEditPositive.text.toString()
         var negativeText = binding.etEditNegative.text.toString()
@@ -69,6 +68,22 @@ class GuestbookFragment : Fragment() {
 
         val starsValue = binding.rbStars.rating
         Timber.d("stars: $starsValue")
+
+        val db = DBHelper(requireContext(), null)
+        val cursor = db.getInfo()
+
+        if (cursor!!.moveToFirst()) {
+            do {
+                guestName = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_GUESTNAME))
+                guestCountry = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_GUESTCOUNTRY))
+            } while (cursor.moveToNext())
+        }
+
+        sendReviewToFirebase(positiveText, negativeText, starsValue,
+            guestName!!, guestCountry!!
+        )
+
+        /**
 
         val database = FirebaseDatabase.getInstance(Tools.URL_PATH)
         val myRef = database.reference
@@ -90,24 +105,16 @@ class GuestbookFragment : Fragment() {
             override fun onCancelled(databaseError: DatabaseError) {}
         })
 
-
-
+        **/
     }
 
     private fun sendReviewToFirebase(positiveText: String, negativeText: String, starsValue: Float, guestName: String, guestCountry: String) {
-
-        val hashMap: HashMap<String, Any> = HashMap()
         val sdf = SimpleDateFormat("dd/M/yyyy hh:mm:ss", Locale.UK)
         val currentDate = sdf.format(Date())
 
-        hashMap["negative"] = negativeText
-        hashMap["positive"] = positiveText
-        hashMap["name"] = guestName
-        hashMap["country"] = guestCountry
-        hashMap["stars"] = starsValue
-        hashMap["time"] = currentDate
+        val db = DBHelper(requireContext(), null)
+        db.addGuestbook(positiveText, negativeText, guestName, guestCountry, starsValue.toString(), currentDate)
 
-        databaseGuestBook.child("guestbook").push().setValue(hashMap)
         Toast.makeText(context, "Thank you for your opinion!", Toast.LENGTH_LONG).show()
 
         cleanInputs()

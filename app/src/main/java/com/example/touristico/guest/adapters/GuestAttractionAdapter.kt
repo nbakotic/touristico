@@ -5,14 +5,12 @@ import android.content.Intent
 import android.net.Uri
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.navigation.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.touristico.R
-import com.example.touristico.admin.attractions.AdminAttractionsDetailFragmentDirections
 import com.example.touristico.admin.models.Attraction
 import com.example.touristico.databinding.AttractionCardBinding
-import com.example.touristico.databinding.BeachCardBinding
+import com.example.touristico.utils.DBHelper
 
 class GuestAttractionAdapter(private val list: MutableList<Attraction>, private val context: Context) :
     RecyclerView.Adapter<GuestAttractionAdapter.MyViewHolder>() {
@@ -25,15 +23,20 @@ class GuestAttractionAdapter(private val list: MutableList<Attraction>, private 
     }
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
+        val db = DBHelper(context, null)
         val item = list[position]
+        val imageBitmap = db.getImage(item.url!!)
+
         with(holder) {
             binding.name.text = item.name
             binding.distance.text = item.distance
             binding.address.text = item.address
             binding.hours.text = item.hours
             binding.desc.text = item.desc
+
             Glide.with(binding.image.context)
-                .load(item.url)
+                .asBitmap()
+                .load(imageBitmap)
                 .placeholder(R.drawable.ic_baseline_device_unknown_24)
                 .into(binding.image)
 

@@ -284,6 +284,23 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
         return db.rawQuery("SELECT * FROM $GUESTBOOK_TABLE", null)
     }
 
+    fun addGuestbook(positive : String, negative : String, guestName : String, guestCountry : String, stars : String, time : String) {
+        val values = ContentValues()
+
+        values.put(KEY_GUESTNAME, guestName)
+        values.put(KEY_GUESTCOUNTRY, guestCountry)
+        values.put(KEY_TIME, time)
+        values.put(KEY_POSITIVE, positive)
+        values.put(KEY_NEGATIVE, negative)
+        values.put(KEY_STARS, stars)
+
+        val db = this.writableDatabase
+
+        db.insert(GUESTBOOK_TABLE, null, values)
+
+        db.close()
+    }
+
 
     fun initInfo() {
         val values = ContentValues()

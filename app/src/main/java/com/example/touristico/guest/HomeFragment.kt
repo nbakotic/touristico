@@ -1,12 +1,16 @@
 package com.example.touristico.guest
 
+import android.annotation.SuppressLint
+import android.media.DeniedByServerException
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.example.touristico.admin.models.Beach
 import com.example.touristico.admin.models.Info
 import com.example.touristico.databinding.FragmentHomeBinding
+import com.example.touristico.utils.DBHelper
 import com.example.touristico.utils.Tools
 import com.google.firebase.database.*
 import kotlinx.coroutines.CoroutineScope
@@ -34,23 +38,26 @@ class HomeFragment : Fragment() {
 
     }
 
-    /** FIREBASE FOR DISPLAYING INFO - REPLACE WITH INTERNAL DB **/
+    @SuppressLint("Range")
     private fun setInformation() = CoroutineScope(Dispatchers.IO).launch {
-        val database = FirebaseDatabase.getInstance(Tools.URL_PATH)
-        val myRef = database.reference
+        val db = DBHelper(requireContext(), null)
+        //val cursor = db.getItemWithId(DBHelper.INFO_TABLE, 1)
+        val cursor = db.getInfo()
 
-        val query: Query = myRef.child("info")
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        val value = issue.getValue(Info::class.java)
-                        setDefaultInformation(value)
-                    }
-                }
-            }
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
+        if (cursor!!.moveToFirst()) {
+            do {
+                val guestName = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_GUESTNAME))
+                val guestCountry = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_GUESTCOUNTRY))
+                val appName = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_APPARTMENTNAME))
+                val appAdd = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_APPARTMENTADDRESS))
+                val wifiName = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_WIFINAME))
+                val wifiPass = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_WIFIPASSWORD))
+
+                val info = Info(guestName, guestCountry, appName, appAdd, wifiName, wifiPass)
+                setDefaultInformation(info)
+
+            } while (cursor.moveToNext())
+        }
     }
 
     private fun setDefaultInformation(value: Info?) {

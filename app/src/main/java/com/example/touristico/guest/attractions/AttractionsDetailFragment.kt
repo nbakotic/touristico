@@ -1,25 +1,16 @@
 package com.example.touristico.guest.attractions
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.touristico.R
-import com.example.touristico.adapter.AttractionsAdapter
 import com.example.touristico.admin.models.Attraction
-import com.example.touristico.admin.models.Beach
-import com.example.touristico.databinding.FragmentAdminAttractionsDetailBinding
-import com.example.touristico.databinding.FragmentAttractionsBinding
 import com.example.touristico.databinding.FragmentAttractionsDetailBinding
 import com.example.touristico.guest.adapters.GuestAttractionAdapter
-import com.example.touristico.utils.Tools
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.example.touristico.utils.DBHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -33,7 +24,7 @@ class AttractionsDetailFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
 
         _binding = FragmentAttractionsDetailBinding.inflate(inflater, container, false)
         return binding.root
@@ -50,30 +41,27 @@ class AttractionsDetailFragment : Fragment() {
         getFirebaseData()
     }
 
-    /** FIREBASE CALL, REPLACE WITH DATAVASE - FIND ATTRACTON TABLE **/
+    @SuppressLint("Range")
     private fun getFirebaseData() = CoroutineScope(Dispatchers.IO).launch {
         attractionList.clear()
-        val database = FirebaseDatabase.getInstance(Tools.URL_PATH)
-        val myRef = database.getReference("attractions")
 
-        myRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                for (data in dataSnapshot.children) {
-                    val value = data.getValue(Attraction::class.java)
-                    if (value != null) {
-                        attractionList.add(value)
-                    }
-                }
-                if (attractionList.isEmpty()) {
-                    //binding.currentList.visibility = View.GONE
-                    //binding.noBeaches.visibility = View.VISIBLE
-                }
-                attractionsAdapter.notifyDataSetChanged()
-            }
+        val db = DBHelper(requireContext(), null)
+        val cursor = db.getAttraction()
 
-            override fun onCancelled(error: DatabaseError) {
-            }
-        })
+        if (cursor!!.moveToFirst()) {
+            do {
+                val name = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_NAME))
+                val address = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_ADDRESS))
+                val distance = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_DISTANCE))
+                val hours = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_HOURS))
+                val desc = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_DESC))
+                val url = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_URL))
+                val id = cursor.getString(cursor.getColumnIndex(DBHelper.KEY_ID))
+
+                val attraction = Attraction(name, address, distance, hours, desc, url, id)
+                attractionList.add(attraction)
+            } while (cursor.moveToNext())
+        }
     }
 
     private fun setAdapter() {
