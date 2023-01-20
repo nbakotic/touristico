@@ -23,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.IOException
+import java.util.*
 
 class AdminAddBeachFragment : Fragment() {
 
@@ -107,15 +108,13 @@ class AdminAddBeachFragment : Fragment() {
 
     private fun uploadPictureToFirebase(imageUri: Uri) = CoroutineScope(Dispatchers.IO).launch {
         try {
-            val imageUrl = Tools.getFileName(imageUri, requireContext())
+            val imageUrl = UUID.randomUUID().toString()
             val bitmap: Bitmap = MediaStore.Images.Media.getBitmap(requireContext().contentResolver, imageUri)
 
             val db = DBHelper(requireContext(), null)
 
-            if (imageUrl != null) {
-                db.addImage(imageUrl , bitmap)
-                urlPicture = imageUrl
-            }
+            db.addImage(imageUrl , bitmap)
+            urlPicture = imageUrl
 
             Timber.tag("urlPicture").d(urlPicture)
             binding.progressBar.visibility = View.GONE
