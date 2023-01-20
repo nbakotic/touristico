@@ -127,7 +127,7 @@ class AdminEditShopFragment : Fragment() {
         setDefaultInformation()
     }
 
-    fun setDefaultInformation() {
+    private fun setDefaultInformation() {
         binding.etEditName.setText(shopName)
         binding.etEditAdd.setText(address)
         binding.etEditDist.setText(distance)

@@ -43,7 +43,7 @@ class DevicesFragment : Fragment() {
     }
 
     @SuppressLint("Range")
-    private fun getFirebaseData() = CoroutineScope(Dispatchers.IO).launch {
+    private fun getFirebaseData() {
         deviceList.clear()
         val db = DBHelper(requireContext(), null)
         val cursor = db.getDevice()

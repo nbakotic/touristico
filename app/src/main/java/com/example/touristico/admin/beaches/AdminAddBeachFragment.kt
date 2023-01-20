@@ -18,9 +18,6 @@ import com.example.touristico.databinding.FragmentAdminAddBeachBinding
 import com.example.touristico.utils.InputValidator
 import com.example.touristico.utils.Tools
 import com.example.touristico.utils.DBHelper
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.IOException
 import java.util.*
@@ -106,7 +103,7 @@ class AdminAddBeachFragment : Fragment() {
             }
         }
 
-    private fun uploadPictureToFirebase(imageUri: Uri) = CoroutineScope(Dispatchers.IO).launch {
+    private fun uploadPictureToFirebase(imageUri: Uri) {
         try {
             val imageUrl = UUID.randomUUID().toString()
             val bitmap: Bitmap = MediaStore.Images.Media.getBitmap(requireContext().contentResolver, imageUri)

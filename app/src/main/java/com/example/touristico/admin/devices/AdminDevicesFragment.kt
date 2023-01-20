@@ -13,9 +13,6 @@ import com.example.touristico.adapter.DeviceAdapter
 import com.example.touristico.admin.models.Device
 import com.example.touristico.databinding.FragmentAdminDevicesBinding
 import com.example.touristico.utils.DBHelper
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class AdminDevicesFragment : Fragment() {
     private var _binding: FragmentAdminDevicesBinding? = null
@@ -41,7 +38,7 @@ class AdminDevicesFragment : Fragment() {
     }
 
     @SuppressLint("Range")
-    private fun getFirebaseData() = CoroutineScope(Dispatchers.IO).launch {
+    private fun getFirebaseData() {
         deviceList.clear()
         val db = DBHelper(requireContext(), null)
         val cursor = db.getDevice()

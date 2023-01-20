@@ -39,7 +39,7 @@ class AdminGuestbookFragment : Fragment() {
     }
 
     @SuppressLint("Range")
-    private fun getFirebaseData() = CoroutineScope(Dispatchers.IO).launch {
+    private fun getFirebaseData() {
         val db = DBHelper(requireContext(), null)
         val cursor = db.getGuestbook()
 
