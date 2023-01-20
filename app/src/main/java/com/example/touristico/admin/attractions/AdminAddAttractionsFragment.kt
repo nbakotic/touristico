@@ -113,15 +113,13 @@ class AdminAddAttractionsFragment : Fragment() {
 
     private fun uploadPictureToFirebase(imageUri: Uri) = CoroutineScope(Dispatchers.IO).launch {
         try {
-            val imageUrl = Tools.getFileName(imageUri, requireContext())
+            val imageUrl = UUID.randomUUID().toString()
             val bitmap: Bitmap = MediaStore.Images.Media.getBitmap(requireContext().contentResolver, imageUri)
 
             val db = DBHelper(requireContext(), null)
 
-            if (imageUrl != null) {
-                db.addImage(imageUrl , bitmap)
-                urlPicture = imageUrl
-            }
+            db.addImage(imageUrl , bitmap)
+            urlPicture = imageUrl
 
             Timber.tag("urlPicture").d(urlPicture)
             binding.progressBar2.visibility = View.GONE
