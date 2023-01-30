@@ -82,30 +82,6 @@ class GuestbookFragment : Fragment() {
         sendReviewToFirebase(positiveText, negativeText, starsValue,
             guestName!!, guestCountry!!
         )
-
-        /**
-
-        val database = FirebaseDatabase.getInstance(Tools.URL_PATH)
-        val myRef = database.reference
-
-        val query: Query = myRef.child("info")
-        query.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    for (issue in dataSnapshot.children) {
-                        val value = issue.getValue(Info::class.java)
-                        guestName = value!!.guestName.toString()
-                        guestCountry = value!!.guestCountry.toString()
-                        sendReviewToFirebase(positiveText, negativeText, starsValue,
-                            guestName!!, guestCountry!!
-                        )
-                    }
-                }
-            }
-            override fun onCancelled(databaseError: DatabaseError) {}
-        })
-
-        **/
     }
 
     private fun sendReviewToFirebase(positiveText: String, negativeText: String, starsValue: Float, guestName: String, guestCountry: String) {

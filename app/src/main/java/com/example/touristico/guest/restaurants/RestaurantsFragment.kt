@@ -11,9 +11,6 @@ import com.example.touristico.admin.models.Restaurant
 import com.example.touristico.databinding.FragmentRestaurantsBinding
 import com.example.touristico.guest.adapters.GuestRestaurantAdapter
 import com.example.touristico.utils.DBHelper
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class RestaurantsFragment : Fragment() {
     private var _binding: FragmentRestaurantsBinding? = null
@@ -42,7 +39,7 @@ class RestaurantsFragment : Fragment() {
     }
 
     @SuppressLint("Range")
-    private fun getFirebaseData() = CoroutineScope(Dispatchers.IO).launch {
+    private fun getFirebaseData() {
         restaurantList.clear()
 
         val db = DBHelper(requireContext(), null)

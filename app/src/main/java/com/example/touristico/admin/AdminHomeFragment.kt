@@ -154,7 +154,7 @@ class AdminHomeFragment : Fragment() {
         setDefaultInformation()
     }
 
-    fun setDefaultInformation() {
+    private fun setDefaultInformation() {
         binding.etEditGname.setText(guestName)
         binding.etEditCountry.setText(guestCountry)
         binding.etEditAname.setText(appName)

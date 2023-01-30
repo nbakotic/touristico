@@ -13,9 +13,6 @@ import com.example.touristico.databinding.FragmentDevicesDetailBinding
 import com.example.touristico.guest.models.Device
 import com.example.touristico.utils.DBHelper
 import com.google.firebase.database.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 
 class DevicesDetailFragment : Fragment() {
@@ -47,7 +44,7 @@ class DevicesDetailFragment : Fragment() {
     }
 
     @SuppressLint("Range")
-    private fun setDeviceInformation() = CoroutineScope(Dispatchers.IO).launch {
+    private fun setDeviceInformation() {
         val db = DBHelper(requireContext(), null)
         val cursor = db.getItemWithId(DBHelper.DEVICE_TABLE, deviceId.toInt())
 
@@ -67,8 +64,8 @@ class DevicesDetailFragment : Fragment() {
     private fun setDefaultInformation(value: Device?) {
         val db = DBHelper(requireContext(), null)
         val imageBitmap = db.getImage(value?.image!!)
-        binding.tvDeviceDescription.text = value.name
-        binding.tvDeviceName.text = value.description
+        binding.tvDeviceDescription.text = value.description
+        binding.tvDeviceName.text =  value.name
 
         Glide.with(binding.ivDeviceDetails.context)
             .asBitmap()

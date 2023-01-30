@@ -349,8 +349,16 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
     }
 
 
+    private fun resizePhoto(bitmap: Bitmap): Bitmap {
+        val w = 180
+        val h = 270
+        return Bitmap.createScaledBitmap(bitmap, w, h, false)
+    }
+
+
     //add image
-    fun addImage(url : String, image : Bitmap) {
+    fun addImage(url : String, imageOriginal : Bitmap) {
+        val image = resizePhoto(imageOriginal)
 
         val imgData : ByteArray = Tools.bitmapTosByteArray(image)
 
