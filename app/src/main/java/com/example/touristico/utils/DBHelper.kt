@@ -237,7 +237,7 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) :
         values.put(KEY_ADDRESS, address)
         values.put(KEY_DISTANCE, distance)
         values.put(KEY_HOURS, hours)
-        values.put(KEY_DESC, food)
+        values.put(KEY_FOOD, food)
 
         val db = this.writableDatabase
         db.update(RESTAURANT_TABLE,  values, "$KEY_ID=$id", null)
